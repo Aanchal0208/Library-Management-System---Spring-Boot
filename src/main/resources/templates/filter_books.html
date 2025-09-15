@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{base::layout(~{::section})}">
+<head>
+    <meta charset="UTF-8">
+    <title>Filter Books</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+
+<section>
+    <div class="container" style="padding-left: 1px; padding-right: 1px; padding-top: 20px;">
+        <div class="row">
+            <!-- Sidebar Filters -->
+            <div class="col-md-3">
+                <h4 class="text-center">Filter Books</h4>
+                <form method="get" action="/filtersearch" class="card shadow-lg rounded text-white">
+				    <div class="card-header bg-dark text-center fs-4">
+				        <i class="bi bi-funnel-fill me-2"></i>Filter Books
+				    </div>
+				
+				    <div class="card-body p-4">
+				
+				        <!-- Title -->
+				            <label class="form-label text-dark">
+				                <i class="bi bi-book me-2"></i>Title
+				            </label>
+				            <input type="text" name="title" class="form-control border-1" placeholder="Enter title">
+				        				
+				        <!-- Author -->
+				            <label class="form-label text-dark">
+				                <i class="bi bi-person-fill me-2"></i>Author
+				            </label>
+				            <input type="text" name="author" class="form-control border-1" placeholder="Enter author">
+				
+				        <!-- ISBN -->
+				            <label class="form-label text-dark">
+				                <i class="bi bi-upc-scan me-2"></i>ISBN
+				            </label>
+				            <input type="text" name="isbn" class="form-control border-1" placeholder="Enter ISBN">
+				
+				        <!-- Price Range -->
+				            <label class="form-label text-dark">
+				                <i class="bi bi-currency-rupee me-2"></i>Price Range
+				            </label>
+				            <div class="form-check text-dark">
+				                <input class="form-check-input" type="radio" name="price" value="0-499" id="p1">
+				                <label class="form-check-label" for="p1">Under ₹500</label>
+				            </div>
+				            <div class="form-check text-dark">
+				                <input class="form-check-input" type="radio" name="price" value="500-999" id="p2">
+				                <label class="form-check-label" for="p2">₹500 - ₹999</label>
+				            </div>
+				            <div class="form-check text-dark">
+				                <input class="form-check-input" type="radio" name="price" value="1000-999999" id="p3">
+				                <label class="form-check-label" for="p3">Above ₹1000</label>
+				            </div>
+				
+				        <!-- Button -->
+				        <button type="submit" class="btn btn-danger w-100 mt-3">
+				            <i class="bi bi-search me-2"></i>Apply Filters
+				        </button>
+				    </div>
+				</form>
+            </div>
+
+            <!-- Results Table -->
+            <div class="col-md-9">
+                <h4 class="text-center mb-3">Book Results</h4>
+                <div th:if="${books.size() == 0}" class="alert alert-warning text-center">
+                    No books found matching the filters.
+                </div>
+                <div class="table-responsive">
+				    <table class="table table-bordered table-hover text-center align-middle">
+				        <thead class="table-dark">
+				            <tr>
+				                <th>#</th>
+				                <th>Image</th>
+				                <th>Title</th>
+				                <th>Description</th>
+				                <th>Author</th>
+				                <th>Price</th>
+				                <th>ISBN</th>
+				                <th>Actions</th>
+				            </tr>
+				        </thead>
+				        <tbody>
+				            <tr th:each="b, c : ${books}">
+				                <td>[[${c.count}]]</td>
+				                <td><img th:src="@{'/img/books/' + ${b.imageName}}" height="50" width="50" class="rounded border"></td>
+				                <td>[[${b.title}]]</td>
+				                <td>[[${b.description}]]</td>
+				                <td>[[${b.author}]]</td>
+				                <td>₹[[${b.price}]]</td>
+				                <td th:text="${b.isbn != null ? b.isbn : 'N/A'}"></td>
+				                <td>
+				                    <a th:href="@{/updatebooks/{id}(id=${b.id})}" class="btn btn-sm btn-outline-primary">Edit</a>
+				                    <a th:href="@{/deletebook/{id}(id=${b.id})}" class="btn btn-sm btn-outline-danger"
+				                       onclick="return confirm('Delete this book?');">Delete</a>
+				                </td>
+				            </tr>
+				        </tbody>
+				    </table>
+				</div>
+				
+				<!-- Pagination -->
+				<div class="d-flex justify-content-center mt-3">
+				    <nav>
+				        <ul class="pagination">
+				
+				            <!-- Previous Button -->
+				            <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled'">
+				                <a class="page-link" 
+				                   th:href="@{/filtersearch(title=${title}, author=${author}, isbn=${isbn}, price=${price}, page=${currentPage - 1})}">Previous</a>
+				            </li>
+				
+				            <!-- First Page -->
+				            <li class="page-item" th:classappend="${currentPage == 0} ? 'active'">
+				                <a class="page-link" 
+				                   th:href="@{/filtersearch(title=${title}, author=${author}, isbn=${isbn}, price=${price}, page=0)}">1</a>
+				            </li>
+				
+				            <!-- Ellipsis if currentPage > 3 -->
+				            <li class="page-item disabled" th:if="${currentPage > 3}">
+				                <a class="page-link">...</a>
+				            </li>
+				
+				            <!-- Pages around currentPage -->
+				            <li class="page-item" 
+				                th:each="i : ${#numbers.sequence(currentPage - 1, currentPage + 1)}"
+				                th:if="${i > 0 and i < totalPages - 1}" 
+				                th:classappend="${currentPage == i} ? 'active'">
+				                <a class="page-link" 
+				                   th:href="@{/filtersearch(title=${title}, author=${author}, isbn=${isbn}, price=${price}, page=${i})}" 
+				                   th:text="${i + 1}">2</a>
+				            </li>
+				
+				            <!-- Ellipsis if currentPage < totalPages - 4 -->
+				            <li class="page-item disabled" th:if="${currentPage < totalPages - 4}">
+				                <a class="page-link">...</a>
+				            </li>
+				
+				            <!-- Last Page (only if totalPages > 1) -->
+				            <li class="page-item" 
+				                th:if="${totalPages > 1}" 
+				                th:classappend="${currentPage == totalPages - 1} ? 'active'">
+				                <a class="page-link" 
+				                   th:href="@{/filtersearch(title=${title}, author=${author}, isbn=${isbn}, price=${price}, page=${totalPages - 1})}" 
+				                   th:text="${totalPages}">10</a>
+				            </li>
+				
+				            <!-- Next Button -->
+				            <li class="page-item" th:classappend="${currentPage == totalPages - 1} ? 'disabled'">
+				                <a class="page-link" 
+				                   th:href="@{/filtersearch(title=${title}, author=${author}, isbn=${isbn}, price=${price}, page=${currentPage + 1})}">Next</a>
+				            </li>
+				
+				        </ul>
+				    </nav>
+				</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
